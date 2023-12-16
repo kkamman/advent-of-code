@@ -14,9 +14,13 @@ var validator = new CubeGameValidator(bagCubeCountByColor: new()
 });
 
 var validGameIds = parsedGameResults.Where(validator.ValidateGameResult).Select(game => game.GameId);
-var answer = validGameIds.Sum();
+var stepOneAnswer = validGameIds.Sum();
 
-Console.WriteLine("Answer: {0}", answer);
+var powerCalculator = new CubeGamePowerCalculator();
+var stepTwoAnswer = parsedGameResults.Select(powerCalculator.CalculatePowerForGameResult).Sum();
+
+Console.WriteLine("Step One Answer: {0}", stepOneAnswer);
+Console.WriteLine("Step Two Answer: {0}", stepTwoAnswer);
 
 Console.ReadKey();
 Environment.Exit(0);
