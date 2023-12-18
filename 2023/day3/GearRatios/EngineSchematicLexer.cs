@@ -2,7 +2,13 @@
 
 namespace GearRatios;
 
-public record EngineSchematicToken(string Value, int ColumnIndex, int RowIndex);
+public abstract record EngineSchematicToken(string Value, int ColumnIndex, int RowIndex);
+
+public record NumberToken(string Value, int ColumnIndex, int RowIndex)
+    : EngineSchematicToken(Value, ColumnIndex, RowIndex);
+
+public record SymbolToken(string Value, int ColumnIndex, int RowIndex)
+    : EngineSchematicToken(Value, ColumnIndex, RowIndex);
 
 public partial class EngineSchematicLexer
 {
@@ -22,13 +28,24 @@ public partial class EngineSchematicLexer
 
     public EngineSchematicLexer LexRow(string engineSchematicLine)
     {
-        _tokens.AddRange(EngineSchematicTokenRegex().Matches(engineSchematicLine)
-            .Select(match => new EngineSchematicToken(
-                Value: match.Value,
-                ColumnIndex: match.Index,
-                RowIndex: RowCount)));
+        _tokens.AddRange(EngineSchematicTokenRegex()
+            .Matches(engineSchematicLine)
+            .Select(RegexMatchToToken));
         RowCount++;
         return this;
+    }
+
+    private EngineSchematicToken RegexMatchToToken(Match match)
+    {
+        return match.Value.All(char.IsDigit)
+            ? new NumberToken(
+                Value: match.Value,
+                ColumnIndex: match.Index,
+                RowIndex: RowCount)
+            : new SymbolToken(
+                Value: match.Value,
+                ColumnIndex: match.Index,
+                RowIndex: RowCount);
     }
 
     [GeneratedRegex("\\d+|[^\\d.]")]

@@ -1,35 +1,82 @@
 ﻿namespace GearRatios;
 
-public record EngineSchematic(IReadOnlyList<int> PartNumbers);
+public record EngineSchematic(IReadOnlyList<int> PartNumbers, IReadOnlyList<int> GearRatios);
 
 public class EngineSchematicParser
 {
     public EngineSchematic ParseEngineSchematic(IEnumerable<EngineSchematicToken> tokens)
     {
-        var numberTokens = tokens.Where(token => token.Value.All(char.IsDigit));
-        var symbolTokens = tokens.Except(numberTokens);
+        var partNumberTokens = new List<EngineSchematicToken>();
+        var possibleGearTokens = new List<TokenWithAdjacentTokens>();
 
-        var partNumbers = numberTokens
-            .Where(numberToken => symbolTokens.Any(symbolToken => AreTokensAdjacent(numberToken, symbolToken)))
-            .Select(numberToken => int.Parse(numberToken.Value))
-            .ToList();
+        foreach (var tokenWithAdjacentTokens in GetTokensWithAdjacentTokens(tokens))
+        {
+            var (token, adjacentTokens) = tokenWithAdjacentTokens;
 
-        return new EngineSchematic(partNumbers);
+            if (token is NumberToken numberToken
+                && adjacentTokens.OfType<SymbolToken>().Any())
+            {
+                partNumberTokens.Add(numberToken);
+            }
+
+            if (token is SymbolToken symbolToken
+                && symbolToken.Value == "*"
+                && adjacentTokens.Count > 1)
+            {
+                possibleGearTokens.Add(tokenWithAdjacentTokens);
+            }
+        }
+
+        var gearTokens = possibleGearTokens
+            .Select(token => token.AdjacentTokens
+                .Where(adjacentToken => partNumberTokens.Contains(adjacentToken))
+                .ToList())
+            .Where(adjacentPartNumberTokens => adjacentPartNumberTokens.Count == 2);
+
+        return new EngineSchematic(
+            PartNumbers: partNumberTokens
+                .Select(token => int.Parse(token.Value))
+                .ToList(),
+            GearRatios: gearTokens
+                .Select(adjacentPartNumberTokens => adjacentPartNumberTokens
+                    .Select(partNumberToken => int.Parse(partNumberToken.Value))
+                    .Aggregate((a, b) => a * b))
+                .ToList());
+    }
+
+    private record TokenWithAdjacentTokens(EngineSchematicToken Token, IReadOnlyList<EngineSchematicToken> AdjacentTokens);
+
+    private static IEnumerable<TokenWithAdjacentTokens> GetTokensWithAdjacentTokens(IEnumerable<EngineSchematicToken> tokens)
+    {
+        var tokensByRow = tokens.ToLookup(token => token.RowIndex);
+
+        foreach (var rowIndex in tokensByRow.Select(group => group.Key))
+        {
+            var tokensToCompareForAdjacency = new int[] { rowIndex - 1, rowIndex, rowIndex + 1 }
+                .SelectMany(rowIndex => tokensByRow[rowIndex])
+                .ToList();
+
+            foreach (var token in tokensByRow[rowIndex])
+            {
+                var adjacentTokens = tokensToCompareForAdjacency
+                    .Where(tokenToCompare => AreTokensAdjacent(token, tokenToCompare))
+                    .ToList();
+
+                yield return new TokenWithAdjacentTokens(token, adjacentTokens);
+            }
+        }
     }
 
     private static bool AreTokensAdjacent(EngineSchematicToken tokenA, EngineSchematicToken tokenB)
     {
-        if (tokenB.RowIndex == tokenA.RowIndex)
+        if (tokenA == tokenB)
         {
-            return tokenB.ColumnIndex == tokenA.ColumnIndex - 1
-                || tokenB.ColumnIndex == tokenA.ColumnIndex + tokenA.Value.Length;
-        }
-        else if (tokenB.RowIndex == tokenA.RowIndex - 1 || tokenB.RowIndex == tokenA.RowIndex + 1)
-        {
-            return tokenB.ColumnIndex >= tokenA.ColumnIndex - 1
-                && tokenB.ColumnIndex <= tokenA.ColumnIndex + tokenA.Value.Length;
+            return false;
         }
 
-        return false;
+        var maxStart = Math.Max(tokenA.ColumnIndex - 1, tokenB.ColumnIndex);
+        var minEnd = Math.Min(tokenA.ColumnIndex + tokenA.Value.Length, tokenB.ColumnIndex + tokenB.Value.Length - 1);
+
+        return maxStart <= minEnd;
     }
 }

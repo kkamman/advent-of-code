@@ -5,7 +5,7 @@ namespace GearRatios.Test;
 
 public class EngineSchematicParserTests
 {
-    private readonly string[] _stepOneExampleSchematic = new string[]
+    private readonly string[] _exampleSchematic = new string[]
     {
         "467..114..",
         "...*......",
@@ -23,13 +23,29 @@ public class EngineSchematicParserTests
     public void ShouldIdentifyNumbersAdjacentToSymbolsAsPartNumbers()
     {
         // Arrange
-        var tokens = new EngineSchematicLexer().LexRows(_stepOneExampleSchematic).Tokens;
+        var tokens = new EngineSchematicLexer().LexRows(_exampleSchematic).Tokens;
         var sut = new EngineSchematicParser();
 
         // Act
         var engineSchematic = sut.ParseEngineSchematic(tokens);
 
         // Assert
-        engineSchematic.PartNumbers.Should().HaveCount(8);
+        engineSchematic.PartNumbers.Should().HaveCount(8)
+            .And.Contain(new List<int> { 467, 35, 633, 617, 592, 755, 664, 598 });
+    }
+
+    [Fact]
+    public void ShouldIdentifyStarSymbolsAdjacentToTwoPartNumbersAsGearAndCalculateTheirRatio()
+    {
+        // Arrange
+        var tokens = new EngineSchematicLexer().LexRows(_exampleSchematic).Tokens;
+        var sut = new EngineSchematicParser();
+
+        // Act
+        var engineSchematic = sut.ParseEngineSchematic(tokens);
+
+        // Assert
+        engineSchematic.GearRatios.Should().HaveCount(2)
+            .And.Contain(new List<int> { 16345, 451490 });
     }
 }

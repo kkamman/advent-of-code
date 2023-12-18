@@ -5,7 +5,8 @@ var inputFilePath = GetInputFilePath();
 var tokens = new EngineSchematicLexer().LexRows(GetEngineSchematicRows(inputFilePath)).Tokens;
 var engineSchematic = new EngineSchematicParser().ParseEngineSchematic(tokens);
 
-Console.WriteLine("Answer: {0}", engineSchematic.PartNumbers.Sum());
+Console.WriteLine("Step One Answer: {0}", engineSchematic.PartNumbers.Sum());
+Console.WriteLine("Step Two Answer: {0}", engineSchematic.GearRatios.Sum());
 
 Console.ReadKey();
 Environment.Exit(0);
