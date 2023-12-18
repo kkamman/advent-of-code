@@ -31,7 +31,7 @@ static string GetInputFilePath()
     var inputFilePath = Console.ReadLine();
     if (!File.Exists(inputFilePath))
     {
-        Console.WriteLine("Inputfile path.");
+        Console.WriteLine("Invalid file path.");
         return GetInputFilePath();
     }
     return inputFilePath;
