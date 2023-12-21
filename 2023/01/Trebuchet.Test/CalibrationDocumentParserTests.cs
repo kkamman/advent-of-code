@@ -14,10 +14,9 @@ public class CalibrationDocumentParserTests
 
         // Act
         sut.ParseEntry(entry);
-        var result = sut.GetResult();
 
         // Assert
-        result.Should().Be(expectedResult);
+        sut.Result.Should().Be(expectedResult);
     }
 
     public class StepOneTestData : TheoryData<string, int>
@@ -40,10 +39,9 @@ public class CalibrationDocumentParserTests
 
         // Act
         sut.ParseEntry(entry);
-        var result = sut.GetResult();
 
         // Assert
-        result.Should().Be(expectedResult);
+        sut.Result.Should().Be(expectedResult);
     }
 
     public class StepTwoTestData : TheoryData<string, int>

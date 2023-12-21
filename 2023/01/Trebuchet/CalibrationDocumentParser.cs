@@ -17,22 +17,24 @@ public class CalibrationDocumentParser
             { "nine", "9" }
         };
 
-    private int _result = 0;
+    public int Result { get; private set; } = 0;
 
     public CalibrationDocumentParser(bool useSpelledOutDigits = false)
     {
         _useSpelledOutDigits = useSpelledOutDigits;
     }
 
-    public void ParseDocument(IEnumerable<string> entries)
+    public CalibrationDocumentParser ParseDocument(IEnumerable<string> entries)
     {
         foreach (var entry in entries)
         {
             ParseEntry(entry);
         }
+
+        return this;
     }
 
-    public void ParseEntry(string entry)
+    public CalibrationDocumentParser ParseEntry(string entry)
     {
         var stringsToSearchFor = _spelledOutDigitToActualDigitMap.Values;
 
@@ -57,10 +59,10 @@ public class CalibrationDocumentParser
 
             if (int.TryParse(actualDigits, out int calibrationValue))
             {
-                _result += calibrationValue;
+                Result += calibrationValue;
             }
         }
-    }
 
-    public int GetResult() => _result;
+        return this;
+    }
 }
